@@ -15,8 +15,8 @@ const orbitron = Orbitron({
 });
 
 export const metadata: Metadata = {
-  title: "BlockLucky - Loterie Blockchain Transparente",
-  description: "Jouez en toute transparence grâce à la blockchain ! Une loterie digitale gamifiée pour découvrir la technologie blockchain.",
+  title: "BlockLucky Live - Le Z Event d'Etherbay",
+  description: "Marathon caritatif sur blockchain : 3 jours de dons pour soutenir les associations locales d'Etherbay. Transparence totale, lots symboliques, impact réel.",
 };
 
 export default function RootLayout({

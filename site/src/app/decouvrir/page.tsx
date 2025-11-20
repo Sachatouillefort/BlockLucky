@@ -1,139 +1,166 @@
 "use client";
 
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { AnimatedBackground } from "@/components/animated-background";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { StreamerCard } from "@/components/StreamerCard";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-interface Module {
-  id: string;
-  title: string;
+interface Subgoal {
+  amount: number;
   description: string;
-  icon: string;
-  color: string;
-  content: {
-    question: string;
-    options: string[];
-    correctAnswer: number;
-    explanation: string;
-  };
+  completed: boolean;
 }
 
-export default function Decouvrir() {
-  const [completedModules, setCompletedModules] = useState<string[]>([]);
-  const [activeModule, setActiveModule] = useState<string | null>(null);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [showResult, setShowResult] = useState(false);
+interface Streamer {
+  id: string;
+  name: string;
+  avatar: string;
+  platform: string;
+  isLive: boolean;
+  viewers?: number;
+  amountCollected: number;
+  goal: number;
+  subgoals: Subgoal[];
+}
 
-  const modules: Module[] = [
+export default function Streamers() {
+  const [totalCollected, setTotalCollected] = useState(0);
+  const [liveCount, setLiveCount] = useState(0);
+
+  const streamers: Streamer[] = [
     {
-      id: "bloc",
-      title: "C'est quoi un bloc ?",
-      description: "Comprendre la structure de base de la blockchain",
-      icon: "🧱",
-      color: "from-primary to-primary/50",
-      content: {
-        question: "Un bloc dans la blockchain contient :",
-        options: [
-          "Uniquement des transactions financières",
-          "Des transactions, un timestamp et le hash du bloc précédent",
-          "Seulement du code informatique",
-          "Des photos et vidéos"
-        ],
-        correctAnswer: 1,
-        explanation: "Un bloc contient des données de transactions, un horodatage (timestamp), et le hash du bloc précédent. C'est cette structure en chaîne qui rend la blockchain si sécurisée !"
-      }
+      id: "1",
+      name: "TechWave",
+      avatar: "🎮",
+      platform: "Twitch",
+      isLive: true,
+      viewers: 1247,
+      amountCollected: 45.8,
+      goal: 100,
+      subgoals: [
+        { amount: 5, description: "Je donne 1000€ à EtherKids", completed: true },
+        { amount: 10, description: "24h de stream non-stop", completed: true },
+        { amount: 20, description: "Je joue avec mes viewers toute la journée", completed: true },
+        { amount: 30, description: "Je cuisine en direct pendant le stream", completed: true },
+        { amount: 40, description: "Marathon gaming : tous les classiques en une session", completed: true },
+        { amount: 50, description: "Je rase ma barbe en direct", completed: false },
+        { amount: 60, description: "Collaboration avec 5 autres streamers du Z Event", completed: false },
+        { amount: 75, description: "Je dors en stream jusqu'à la fin du Z Event", completed: false },
+        { amount: 100, description: "J'organise un tournoi avec 10 000€ de cagnotte", completed: false }
+      ]
     },
     {
-      id: "wallet",
-      title: "C'est quoi un wallet ?",
-      description: "Découvrir le portefeuille numérique",
-      icon: "👛",
-      color: "from-secondary to-secondary/50",
-      content: {
-        question: "Un wallet (portefeuille) permet de :",
-        options: [
-          "Stocker uniquement de l'argent liquide",
-          "Gérer ses clés privées et interagir avec la blockchain",
-          "Acheter des bitcoins uniquement",
-          "Miner des cryptomonnaies"
-        ],
-        correctAnswer: 1,
-        explanation: "Un wallet stocke vos clés privées qui vous permettent d'accéder à vos cryptomonnaies et d'interagir avec la blockchain. C'est comme votre identité numérique !"
-      }
+      id: "2",
+      name: "CryptoQueen",
+      avatar: "👑",
+      platform: "YouTube",
+      isLive: true,
+      viewers: 892,
+      amountCollected: 38.2,
+      goal: 80,
+      subgoals: [
+        { amount: 3, description: "Je donne 500€ à GreenBay", completed: true },
+        { amount: 8, description: "Stream crypto-éducation pour débutants", completed: true },
+        { amount: 15, description: "Je révèle mon portfolio crypto en live", completed: true },
+        { amount: 25, description: "Masterclass blockchain avec invités surprise", completed: true },
+        { amount: 35, description: "J'explique la blockchain à ma grand-mère en direct", completed: true },
+        { amount: 50, description: "Je crée un NFT en direct et le donne au plus gros donateur", completed: false },
+        { amount: 65, description: "Interview exclusive d'un expert Ethereum", completed: false },
+        { amount: 80, description: "Je code un smart contract en live avec les viewers", completed: false }
+      ]
     },
     {
-      id: "smart-contract",
-      title: "C'est quoi un smart contract ?",
-      description: "Les programmes auto-exécutables",
-      icon: "📜",
-      color: "from-primary to-secondary",
-      content: {
-        question: "Un smart contract est :",
-        options: [
-          "Un contrat papier scanné",
-          "Un programme qui s'exécute automatiquement sur la blockchain",
-          "Un avocat spécialisé en blockchain",
-          "Une application mobile"
-        ],
-        correctAnswer: 1,
-        explanation: "Un smart contract est un programme informatique déployé sur la blockchain qui s'exécute automatiquement quand certaines conditions sont remplies. Pas besoin d'intermédiaire !"
-      }
+      id: "3",
+      name: "EtherbayHero",
+      avatar: "🦸",
+      platform: "Twitch",
+      isLive: false,
+      amountCollected: 52.1,
+      goal: 120,
+      subgoals: [
+        { amount: 5, description: "Premier don de 1000€ à Art4All", completed: true },
+        { amount: 12, description: "Je fais un tour de la ville d'Etherbay en costume", completed: true },
+        { amount: 20, description: "Marathon IRL : visite des 3 associations", completed: true },
+        { amount: 30, description: "Stream cosplay : je me déguise en super-héros local", completed: true },
+        { amount: 45, description: "Défi sportif : 100 pompes toutes les heures", completed: true },
+        { amount: 60, description: "Je distribue des goodies dans les rues d'Etherbay", completed: false },
+        { amount: 80, description: "Concert surprise avec des artistes locaux", completed: false },
+        { amount: 100, description: "Je saute en parachute avec le logo BlockLucky", completed: false },
+        { amount: 120, description: "J'organise une flash mob géante à Etherbay", completed: false }
+      ]
     },
     {
-      id: "ethereum",
-      title: "C'est quoi Ethereum ?",
-      description: "La plateforme de smart contracts",
-      icon: "⟠",
-      color: "from-secondary to-primary",
-      content: {
-        question: "Ethereum permet de :",
-        options: [
-          "Uniquement échanger de l'argent",
-          "Créer des applications décentralisées et des smart contracts",
-          "Acheter des bitcoins",
-          "Stocker des fichiers"
-        ],
-        correctAnswer: 1,
-        explanation: "Ethereum est une plateforme blockchain qui permet de créer des applications décentralisées (dApps) et d'exécuter des smart contracts. C'est comme un ordinateur mondial !"
-      }
+      id: "4",
+      name: "GreenGamer",
+      avatar: "🌿",
+      platform: "Twitch",
+      isLive: true,
+      viewers: 643,
+      amountCollected: 29.5,
+      goal: 75,
+      subgoals: [
+        { amount: 3, description: "Je plante 100 arbres pour GreenBay", completed: true },
+        { amount: 8, description: "Stream 100% énergie renouvelable", completed: true },
+        { amount: 15, description: "Je joue uniquement à des jeux écolo pendant 12h", completed: true },
+        { amount: 25, description: "Atelier recyclage en direct : je transforme des déchets", completed: true },
+        { amount: 35, description: "Je mange vegan pendant tout le Z Event en stream", completed: false },
+        { amount: 50, description: "Je nettoie le parc d'Etherbay en live", completed: false },
+        { amount: 60, description: "Installation de panneaux solaires en direct", completed: false },
+        { amount: 75, description: "Je deviens ambassadeur zéro déchet d'Etherbay", completed: false }
+      ]
+    },
+    {
+      id: "5",
+      name: "ArtMaster",
+      avatar: "🎨",
+      platform: "YouTube",
+      isLive: false,
+      amountCollected: 41.3,
+      goal: 90,
+      subgoals: [
+        { amount: 4, description: "Don de 800€ pour rénover la salle de concert", completed: true },
+        { amount: 10, description: "Je peins un tableau géant en direct", completed: true },
+        { amount: 18, description: "Atelier d'art collaboratif avec les viewers", completed: true },
+        { amount: 28, description: "Je crée une œuvre avec seulement des dons matériels", completed: true },
+        { amount: 40, description: "Performance artistique de 6h non-stop", completed: true },
+        { amount: 55, description: "Je dessine les portraits de 50 donateurs", completed: false },
+        { amount: 70, description: "Exposition virtuelle de toutes mes créations du Z Event", completed: false },
+        { amount: 90, description: "Je peins la fresque officielle du BlockLucky Live", completed: false }
+      ]
+    },
+    {
+      id: "6",
+      name: "BlockchainBoss",
+      avatar: "⛓️",
+      platform: "Twitch",
+      isLive: true,
+      viewers: 1523,
+      amountCollected: 67.9,
+      goal: 150,
+      subgoals: [
+        { amount: 5, description: "Premier don de 1000€", completed: true },
+        { amount: 15, description: "Stream éducation blockchain 24h", completed: true },
+        { amount: 25, description: "Je donne 5000€ aux associations", completed: true },
+        { amount: 40, description: "Conférence avec les devs Ethereum", completed: true },
+        { amount: 60, description: "Je code un dApp en direct", completed: true },
+        { amount: 80, description: "Marathon : j'explique chaque ligne du smart contract BlockLucky", completed: false },
+        { amount: 100, description: "Je ramène un expert blockchain internationale en surprise", completed: false },
+        { amount: 125, description: "Défi ultime : je déploie un nouveau projet sur mainnet en live", completed: false },
+        { amount: 150, description: "J'organise le premier BlockLucky Summit à Etherbay", completed: false }
+      ]
     }
   ];
 
-  const badges = [
-    { id: "beginner", title: "Débutant", icon: "🌱", required: 1 },
-    { id: "learner", title: "Apprenant", icon: "📚", required: 2 },
-    { id: "expert", title: "Expert", icon: "🎓", required: 3 },
-    { id: "master", title: "Maître", icon: "🏆", required: 4 },
-  ];
+  useEffect(() => {
+    const total = streamers.reduce((sum, s) => sum + s.amountCollected, 0);
+    setTotalCollected(total);
+    setLiveCount(streamers.filter(s => s.isLive).length);
+  }, []);
 
-  const progress = (completedModules.length / modules.length) * 100;
-
-  const handleAnswer = (moduleId: string, answerIndex: number) => {
-    setSelectedAnswer(answerIndex);
-    setShowResult(true);
-
-    const currentModule = modules.find(m => m.id === moduleId);
-    if (currentModule && answerIndex === currentModule.content.correctAnswer) {
-      if (!completedModules.includes(moduleId)) {
-        setCompletedModules([...completedModules, moduleId]);
-      }
-    }
-  };
-
-  const resetModule = () => {
-    setActiveModule(null);
-    setSelectedAnswer(null);
-    setShowResult(false);
-  };
-
-  const currentBadge = badges.reduce((acc, badge) => {
-    return completedModules.length >= badge.required ? badge : acc;
-  }, badges[0]);
+  const globalGoal = streamers.reduce((sum, s) => sum + s.goal, 0);
+  const globalProgress = (totalCollected / globalGoal) * 100;
 
   return (
     <>
@@ -145,254 +172,119 @@ export default function Decouvrir() {
           {/* Titre */}
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-6xl font-['Orbitron'] font-bold mb-4 neon-text">
-              Découvrir la blockchain
+              Streamers en direct
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Apprenez les concepts fondamentaux à travers des modules interactifs
+              Suivez les streamers du BlockLucky Live en temps réel
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {/* Modules */}
-            <div className="lg:col-span-2 space-y-6">
-              {!activeModule ? (
-                <>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {modules.map((module) => {
-                      const isCompleted = completedModules.includes(module.id);
+          {/* Stats globales */}
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12">
+            <Card className="neon-border bg-gradient-to-br from-primary/20 to-primary/10 p-6 text-center">
+              <div className="text-4xl mb-2">💰</div>
+              <h3 className="text-sm text-muted-foreground mb-1">Total collecté</h3>
+              <p className="text-3xl font-['Orbitron'] font-bold text-primary">
+                {totalCollected.toFixed(2)} ETH
+              </p>
+            </Card>
 
-                      return (
-                        <Card
-                          key={module.id}
-                          className={`bg-card/50 backdrop-blur-sm border-primary/20 p-6 cursor-pointer hover:border-primary/50 transition-all hover:scale-105 ${
-                            isCompleted ? 'border-secondary/50' : ''
-                          }`}
-                          onClick={() => setActiveModule(module.id)}
-                        >
-                          <div className="flex items-start justify-between mb-4">
-                            <div className={`text-5xl animate-float`} style={{ animationDelay: `${modules.indexOf(module) * 0.2}s` }}>
-                              {module.icon}
-                            </div>
-                            {isCompleted && (
-                              <Badge className="bg-secondary/20 text-secondary border-secondary/50">
-                                ✓ Terminé
-                              </Badge>
-                            )}
-                          </div>
+            <Card className="neon-border bg-gradient-to-br from-secondary/20 to-secondary/10 p-6 text-center">
+              <div className="text-4xl mb-2">🔴</div>
+              <h3 className="text-sm text-muted-foreground mb-1">Streamers en ligne</h3>
+              <p className="text-3xl font-['Orbitron'] font-bold text-secondary">
+                {liveCount} / {streamers.length}
+              </p>
+            </Card>
 
-                          <h3 className="font-['Orbitron'] font-bold text-xl mb-2">
-                            {module.title}
-                          </h3>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            {module.description}
-                          </p>
+            <Card className="neon-border bg-gradient-to-br from-primary/20 to-secondary/10 p-6 text-center">
+              <div className="text-4xl mb-2">🎯</div>
+              <h3 className="text-sm text-muted-foreground mb-1">Progression globale</h3>
+              <p className="text-3xl font-['Orbitron'] font-bold">
+                {globalProgress.toFixed(0)}%
+              </p>
+            </Card>
+          </div>
 
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full border-primary/50 hover:bg-primary/10"
-                          >
-                            {isCompleted ? "Revoir" : "Commencer"}
-                          </Button>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </>
-              ) : (
-                // Module actif
-                <Card className="neon-border bg-card/50 backdrop-blur-sm p-8">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetModule}
-                    className="mb-6"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    Retour
-                  </Button>
-
-                  {(() => {
-                    const currentModule = modules.find(m => m.id === activeModule);
-                    if (!currentModule) return null;
-
-                    return (
-                      <>
-                        <div className="text-center mb-8">
-                          <div className="text-6xl mb-4">{currentModule.icon}</div>
-                          <h2 className="text-3xl font-['Orbitron'] font-bold mb-3">
-                            {currentModule.title}
-                          </h2>
-                          <p className="text-muted-foreground">{currentModule.description}</p>
-                        </div>
-
-                        <div className="space-y-6">
-                          <div className="bg-primary/10 border border-primary/30 rounded-lg p-6">
-                            <h3 className="font-bold text-lg mb-4">
-                              {currentModule.content.question}
-                            </h3>
-
-                            <div className="space-y-3">
-                              {currentModule.content.options.map((option, index) => {
-                                const isSelected = selectedAnswer === index;
-                                const isCorrect = index === currentModule.content.correctAnswer;
-                                const showCorrect = showResult && isCorrect;
-                                const showWrong = showResult && isSelected && !isCorrect;
-
-                                return (
-                                  <button
-                                    key={index}
-                                    onClick={() => !showResult && handleAnswer(currentModule.id, index)}
-                                    disabled={showResult}
-                                    className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-                                      showCorrect
-                                        ? 'border-secondary bg-secondary/20'
-                                        : showWrong
-                                        ? 'border-destructive bg-destructive/20'
-                                        : isSelected
-                                        ? 'border-primary bg-primary/10'
-                                        : 'border-primary/30 hover:border-primary/50 hover:bg-primary/5'
-                                    } ${showResult ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <span>{option}</span>
-                                      {showCorrect && <span className="text-2xl">✓</span>}
-                                      {showWrong && <span className="text-2xl">✗</span>}
-                                    </div>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          {showResult && (
-                            <div className={`border rounded-lg p-6 animate-float ${
-                              selectedAnswer === currentModule.content.correctAnswer
-                                ? 'bg-secondary/10 border-secondary/30'
-                                : 'bg-destructive/10 border-destructive/30'
-                            }`}>
-                              <div className="flex items-start gap-3 mb-3">
-                                <div className="text-3xl">
-                                  {selectedAnswer === currentModule.content.correctAnswer ? '🎉' : '💡'}
-                                </div>
-                                <div>
-                                  <h4 className="font-bold mb-2">
-                                    {selectedAnswer === currentModule.content.correctAnswer
-                                      ? 'Bravo ! Réponse correcte !'
-                                      : 'Pas tout à fait...'}
-                                  </h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    {currentModule.content.explanation}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <Button
-                                onClick={resetModule}
-                                className="w-full mt-4 bg-primary hover:bg-primary/90"
-                              >
-                                Continuer
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    );
-                  })()}
-                </Card>
-              )}
+          {/* Liste des streamers */}
+          <div className="max-w-6xl mx-auto">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+              <h2 className="text-2xl font-['Orbitron'] font-bold">Tous les streamers</h2>
+              <div className="flex flex-wrap gap-3">
+                <span className="text-sm text-muted-foreground">🔴 En direct</span>
+                <span className="text-sm text-muted-foreground">• Hors ligne</span>
+                <span className="text-sm text-primary font-medium">👆 Cliquez pour voir les subgoals</span>
+              </div>
             </div>
 
-            {/* Sidebar - Progression et badges */}
-            <div className="space-y-6">
-              {/* Progression */}
-              <Card className="bg-card/50 backdrop-blur-sm border-primary/20 p-6">
-                <h3 className="font-['Orbitron'] font-bold text-lg mb-4">
-                  Ma progression
-                </h3>
-
-                <div className="mb-4">
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Modules complétés</span>
-                    <span className="font-bold">{completedModules.length}/{modules.length}</span>
-                  </div>
-                  <Progress value={progress} className="h-2" />
-                </div>
-
-                <div className="text-center mt-6">
-                  <div className="text-5xl mb-2 animate-float">
-                    {currentBadge.icon}
-                  </div>
-                  <Badge className={`bg-gradient-to-r ${
-                    completedModules.length >= 4 ? 'from-primary to-secondary' :
-                    completedModules.length >= 3 ? 'from-primary to-primary/50' :
-                    completedModules.length >= 2 ? 'from-secondary to-secondary/50' :
-                    'from-muted to-muted'
-                  } text-white px-4 py-2`}>
-                    {currentBadge.title}
-                  </Badge>
-                </div>
-              </Card>
-
-              {/* Tous les badges */}
-              <Card className="bg-card/50 backdrop-blur-sm border-primary/20 p-6">
-                <h3 className="font-['Orbitron'] font-bold text-lg mb-4">
-                  Badges à débloquer
-                </h3>
-
-                <div className="space-y-3">
-                  {badges.map((badge) => {
-                    const isUnlocked = completedModules.length >= badge.required;
-
-                    return (
-                      <div
-                        key={badge.id}
-                        className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
-                          isUnlocked
-                            ? 'bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30'
-                            : 'bg-muted/20 opacity-50'
-                        }`}
-                      >
-                        <div className="text-3xl">{badge.icon}</div>
-                        <div className="flex-1">
-                          <div className="font-bold text-sm">{badge.title}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {badge.required} module{badge.required > 1 ? 's' : ''}
-                          </div>
-                        </div>
-                        {isUnlocked && (
-                          <div className="text-secondary">✓</div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-
-              {/* Bonus */}
-              {completedModules.length === modules.length && (
-                <Card className="neon-border bg-gradient-to-br from-primary/20 to-secondary/20 p-6 animate-glow">
-                  <div className="text-center">
-                    <div className="text-5xl mb-3">🎊</div>
-                    <h3 className="font-['Orbitron'] font-bold mb-2">
-                      Félicitations !
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Vous êtes maintenant un Explorateur d'EtherBay certifié !
-                    </p>
-                    <Badge className="bg-gradient-to-r from-primary to-secondary text-white px-4 py-2">
-                      🏆 Maître de la Blockchain
-                    </Badge>
-                  </div>
-                </Card>
-              )}
+            <div className="grid md:grid-cols-2 gap-6">
+              {streamers
+                .sort((a, b) => {
+                  if (a.isLive && !b.isLive) return -1;
+                  if (!a.isLive && b.isLive) return 1;
+                  return b.amountCollected - a.amountCollected;
+                })
+                .map((streamer) => (
+                  <StreamerCard
+                    key={streamer.id}
+                    name={streamer.name}
+                    avatar={streamer.avatar}
+                    platform={streamer.platform}
+                    isLive={streamer.isLive}
+                    viewers={streamer.viewers}
+                    amountCollected={streamer.amountCollected}
+                    goal={streamer.goal}
+                    subgoals={streamer.subgoals}
+                  />
+                ))}
             </div>
           </div>
+
+          {/* Légende */}
+          <Card className="bg-card/30 backdrop-blur-sm border-primary/20 p-6 max-w-4xl mx-auto mt-12">
+            <h3 className="font-['Orbitron'] font-bold mb-4">Comment ça marche ?</h3>
+            <div className="grid md:grid-cols-2 gap-4 text-sm">
+              <div className="flex items-start gap-2">
+                <span className="text-primary">•</span>
+                <p className="text-muted-foreground">
+                  Les streamers sont classés par statut (live en premier) puis par montant collecté
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-primary">•</span>
+                <p className="text-muted-foreground">
+                  Le badge 🔴 LIVE indique qu'un streamer est actuellement en direct
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-primary">•</span>
+                <p className="text-muted-foreground">
+                  <strong>Cliquez sur une carte</strong> pour découvrir les subgoals et défis du streamer
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-primary">•</span>
+                <p className="text-muted-foreground">
+                  Les subgoals débloqués apparaissent en vert avec un badge "DÉBLOQUÉ !"
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-primary">•</span>
+                <p className="text-muted-foreground">
+                  La barre de progression montre l'avancement vers l'objectif personnel
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-primary">•</span>
+                <p className="text-muted-foreground">
+                  Tous les dons sont tracés en temps réel sur la blockchain
+                </p>
+              </div>
+            </div>
+          </Card>
         </div>
       </main>
-      
+
       <Footer />
     </>
   );

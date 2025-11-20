@@ -23,9 +23,9 @@ echo "⏳ Attente du node Hardhat..."
 sleep 5
 
 # Déployer le contrat
-echo "📝 Déploiement du contrat Lottery..."
+echo "📝 Déploiement du contrat DailyLottery..."
 cd blocklucky-smart-contract
-npx hardhat run scripts/deploy.js --network localhost
+npx hardhat run scripts/deploy-daily.js --network localhost
 cd ..
 
 # Démarrer Next.js

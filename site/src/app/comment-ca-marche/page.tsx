@@ -1,8 +1,8 @@
 "use client";
 
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { AnimatedBackground } from "@/components/animated-background";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -11,39 +11,39 @@ export default function CommentCaMarche() {
   const steps = [
     {
       number: "01",
-      title: "J'achète un ticket",
-      description: "Connectez votre wallet et achetez vos tickets avec vos ethers. Chaque ticket vous donne une chance de gagner !",
-      icon: "🎫",
+      title: "Je fais un don",
+      description: "Connectez votre wallet et faites un don en ETH. Le montant est libre et 100% reversé aux associations locales d'Etherbay.",
+      icon: "💚",
       color: "from-primary to-primary/50"
     },
     {
       number: "02",
-      title: "Mon ticket est enregistré",
-      description: "Votre ticket est automatiquement enregistré sur la blockchain Ethereum. Cette opération est publique et vérifiable par tous.",
-      icon: "⛓️",
+      title: "Mon premier don = 1 ticket",
+      description: "Votre premier don de la journée vous donne automatiquement un ticket pour le tirage du soir. Les dons suivants soutiennent la cause sans ticket supplémentaire.",
+      icon: "🎫",
       color: "from-secondary to-secondary/50"
     },
     {
       number: "03",
-      title: "Le tirage est automatique",
-      description: "Le smart contract effectue le tirage de manière aléatoire et transparente. Le résultat est immédiatement visible sur la blockchain.",
-      icon: "🎰",
+      title: "Le tirage à 22h",
+      description: "Chaque soir à 22h, le smart contract sélectionne un gagnant aléatoire qui remporte un lot d'honneur symbolique (NFT, expérience VIP).",
+      icon: "🏆",
       color: "from-primary to-secondary"
     }
   ];
 
   const whyTransparent = [
     {
-      question: "Qu'est-ce qu'un smart contract ?",
-      answer: "Un smart contract est un programme informatique déployé sur la blockchain. Il s'exécute automatiquement selon des règles prédéfinies, sans intervention humaine possible."
+      question: "C'est vraiment 100% légal ?",
+      answer: "Oui ! BlockLucky Live est une levée de fonds caritative autorisée par la mairie d'Etherbay. Les dons (non des mises) sont reversés intégralement aux associations. Les lots sont symboliques et non monétaires."
     },
     {
-      question: "Comment vérifier ma participation ?",
-      answer: "Chaque transaction est enregistrée sur la blockchain avec un hash unique. Vous pouvez utiliser un explorateur de blocs comme Etherscan pour vérifier votre ticket."
+      question: "Où vont mes dons ?",
+      answer: "100% des dons sont reversés aux associations locales : EtherKids (éducation), GreenBay (environnement), et Art4All (culture). Vous pouvez suivre chaque transaction sur la blockchain."
     },
     {
-      question: "Le tirage est-il vraiment équitable ?",
-      answer: "Oui ! Le smart contract utilise une source d'aléatoire vérifiable (VRF). Le code est open-source et peut être audité par n'importe qui."
+      question: "Quels sont les lots à gagner ?",
+      answer: "Les lots sont des récompenses d'honneur : NFT \"Citoyen d'honneur d'Etherbay 2025\", expériences VIP avec influenceurs et maire, goodies éco-conçus. Aucun gain monétaire."
     }
   ];
 
@@ -60,7 +60,7 @@ export default function CommentCaMarche() {
               Comment ça marche ?
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Découvrez le fonctionnement de BlockLucky en 3 étapes simples
+              Un marathon caritatif 100% transparent sur blockchain
             </p>
           </div>
 
@@ -200,24 +200,24 @@ export default function CommentCaMarche() {
           <div className="text-center">
             <Card className="neon-border bg-gradient-to-br from-primary/10 to-secondary/10 p-12 max-w-2xl mx-auto">
               <h2 className="text-3xl font-['Orbitron'] font-bold mb-4">
-                Prêt à participer ?
+                Prêt à contribuer ?
               </h2>
               <p className="text-muted-foreground mb-6">
-                Maintenant que vous comprenez le fonctionnement, il est temps de tenter votre chance !
+                Rejoignez le marathon et soutenez les associations locales d'Etherbay !
               </p>
               <Link href="/participer">
                 <Button
                   size="lg"
                   className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white font-bold animate-glow"
                 >
-                  Acheter mes tickets
+                  Faire un don
                 </Button>
               </Link>
             </Card>
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </>
   );

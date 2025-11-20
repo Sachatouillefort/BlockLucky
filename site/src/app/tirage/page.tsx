@@ -1,62 +1,35 @@
 "use client";
 
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { AnimatedBackground } from "@/components/animated-background";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
-import { LOTTERY_ABI, LOTTERY_CONTRACT_ADDRESS } from "@/lib/lottery-abi";
-import { formatEther } from "viem";
+import { useAccount } from "wagmi";
+import { WinnerFormModal } from "@/components/WinnerFormModal";
+import { useDailyLotteryContract } from "@/hooks/useDailyLotteryContract";
+import { DAILY_PRIZES } from "@/lib/daily-lottery-abi";
+import { DailyPrizeCard } from "@/components/DailyPrizeCard";
 
 export default function Tirage() {
   const { address, isConnected } = useAccount();
   
-  // Lecture des données du contrat
-  const { data: deadline } = useReadContract({
-    address: LOTTERY_CONTRACT_ADDRESS,
-    abi: LOTTERY_ABI,
-    functionName: "deadline",
-  });
-
-  const { data: lotteryActive } = useReadContract({
-    address: LOTTERY_CONTRACT_ADDRESS,
-    abi: LOTTERY_ABI,
-    functionName: "lotteryActive",
-  });
-
-  const { data: players } = useReadContract({
-    address: LOTTERY_CONTRACT_ADDRESS,
-    abi: LOTTERY_ABI,
-    functionName: "getPlayers",
-  });
-
-  const { data: lastWinner } = useReadContract({
-    address: LOTTERY_CONTRACT_ADDRESS,
-    abi: LOTTERY_ABI,
-    functionName: "lastWinner",
-  });
-
-  const { data: lastPrize } = useReadContract({
-    address: LOTTERY_CONTRACT_ADDRESS,
-    abi: LOTTERY_ABI,
-    functionName: "lastPrize",
-  });
-
-  const { data: ownerAddress } = useReadContract({
-    address: LOTTERY_CONTRACT_ADDRESS,
-    abi: LOTTERY_ABI,
-    functionName: "owner",
-  });
-
-  // Fonction pour lancer le tirage (seulement le owner)
-  const { writeContract: pickWinner, data: pickWinnerHash } = useWriteContract();
-
-  const { isLoading: isPickingWinner, isSuccess: winnerPicked } = useWaitForTransactionReceipt({
-    hash: pickWinnerHash,
-  });
+  // Utiliser le hook pour le contrat quotidien
+  const {
+    deadline,
+    lotteryActive,
+    players,
+    lastWinner,
+    lastPrizeDay,
+    currentDay,
+    currentPrize,
+    winners,
+    pickWinner,
+    isPickingWinner,
+    allPrizes
+  } = useDailyLotteryContract();
 
   const [timeLeft, setTimeLeft] = useState({
     hours: 0,
@@ -66,6 +39,8 @@ export default function Tirage() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [rollingNumbers, setRollingNumbers] = useState<number[]>([]);
+  const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [hasShownModal, setHasShownModal] = useState(false);
 
   // Calculer le compte à rebours basé sur la deadline du contrat
   useEffect(() => {
@@ -73,8 +48,7 @@ export default function Tirage() {
 
     const timer = setInterval(() => {
       const now = Math.floor(Date.now() / 1000);
-      const deadlineNum = Number(deadline);
-      const diff = deadlineNum - now;
+      const diff = deadline - now;
 
       if (diff <= 0) {
         setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
@@ -92,13 +66,8 @@ export default function Tirage() {
     return () => clearInterval(timer);
   }, [deadline]);
 
-  // Vérifier si l'utilisateur est le owner
-  const isOwner = address && ownerAddress && address.toLowerCase() === ownerAddress.toLowerCase();
-
   // Fonction pour lancer le tirage avec animation
   const startDraw = () => {
-    if (!isOwner) return;
-
     setIsDrawing(true);
 
     // Animation de défilement des numéros
@@ -112,35 +81,53 @@ export default function Tirage() {
     setTimeout(() => {
       clearInterval(rollInterval);
       setRollingNumbers([]);
-      
-      // Appeler la fonction pickWinner du contrat
-      pickWinner({
-        address: LOTTERY_CONTRACT_ADDRESS,
-        abi: LOTTERY_ABI,
-        functionName: "pickWinner",
-      });
+      pickWinner();
     }, 3000);
   };
 
   // Afficher les confettis quand un gagnant est désigné
   useEffect(() => {
-    if (winnerPicked) {
+    if (lastWinner && lastWinner !== "0x0000000000000000000000000000000000000000") {
       setShowConfetti(true);
       setIsDrawing(false);
       setTimeout(() => setShowConfetti(false), 5000);
     }
-  }, [winnerPicked]);
+  }, [lastWinner]);
 
   // Vérifier si le temps est écoulé
   const isTimeUp = timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0;
   
   // Déterminer s'il y a un gagnant récent
   const hasWinner = lastWinner && lastWinner !== "0x0000000000000000000000000000000000000000";
+  
+  // Vérifier si l'utilisateur connecté est le gagnant
+  const isWinner = address && lastWinner && address.toLowerCase() === lastWinner.toLowerCase();
+
+  // Obtenir les informations du prix gagné
+  const wonPrize = lastPrizeDay > 0 ? DAILY_PRIZES[lastPrizeDay - 1] : null;
+
+  // Afficher le modal automatiquement si l'utilisateur est le gagnant
+  useEffect(() => {
+    if (isWinner && hasWinner && !hasShownModal && isConnected) {
+      setShowWinnerModal(true);
+      setHasShownModal(true);
+    }
+  }, [isWinner, hasWinner, hasShownModal, isConnected]);
 
   return (
     <>
       <AnimatedBackground />
       <Header />
+
+      {/* Modal pour le gagnant */}
+      {isWinner && wonPrize && address && (
+        <WinnerFormModal
+          isOpen={showWinnerModal}
+          onClose={() => setShowWinnerModal(false)}
+          prize={wonPrize.name}
+          walletAddress={address}
+        />
+      )}
 
       {/* Confettis */}
       {showConfetti && (
@@ -165,13 +152,36 @@ export default function Tirage() {
         <div className="container mx-auto px-4 py-20">
           {/* Titre */}
           <div className="text-center mb-16">
+            <Badge className="mb-4 bg-gradient-to-r from-primary to-secondary text-white px-4 py-2">
+              Jour {currentDay + 1} / 3
+            </Badge>
             <h1 className="text-4xl md:text-6xl font-['Orbitron'] font-bold mb-4 neon-text">
-              Tirage au sort
+              Tirage au sort quotidien
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              {hasWinner ? "Le gagnant a été désigné !" : "Le tirage approche..."}
+              {hasWinner ? `Le gagnant du jour ${lastPrizeDay} a été désigné !` : "Le prochain tirage approche..."}
             </p>
           </div>
+
+          {/* Prix du jour actuel */}
+          {!hasWinner && currentPrize && (
+            <div className="max-w-2xl mx-auto mb-12">
+              <Card className="neon-border bg-gradient-to-br from-primary/10 to-secondary/10 p-8">
+                <div className="text-center">
+                  <h2 className="text-2xl font-['Orbitron'] font-bold mb-4">
+                    🎁 Prix du jour
+                  </h2>
+                  <div className="text-6xl mb-4">{currentPrize.icon}</div>
+                  <h3 className="text-3xl font-['Orbitron'] font-bold mb-3">
+                    {currentPrize.name}
+                  </h3>
+                  <p className="text-lg text-muted-foreground">
+                    {currentPrize.description}
+                  </p>
+                </div>
+              </Card>
+            </div>
+          )}
 
           {!hasWinner ? (
             <div className="max-w-4xl mx-auto space-y-8">
@@ -207,12 +217,11 @@ export default function Tirage() {
 
                   <Button
                     onClick={startDraw}
-                    disabled={isDrawing || !isOwner || !isConnected || !isTimeUp || !lotteryActive}
+                    disabled={isDrawing || !isConnected || !isTimeUp || !lotteryActive || isPickingWinner}
                     className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white font-bold text-lg px-8 py-6"
                   >
-                    {isDrawing ? "Tirage en cours..." : 
+                    {isDrawing || isPickingWinner ? "Tirage en cours..." : 
                      !isConnected ? "Connectez votre wallet" :
-                     !isOwner ? "Réservé au propriétaire" :
                      !isTimeUp ? "Attendez la fin du temps" :
                      !lotteryActive ? "Loterie inactive" :
                      "Lancer le tirage"}
@@ -249,7 +258,7 @@ export default function Tirage() {
               {/* Liste des participants */}
               <Card className="bg-card/30 backdrop-blur-sm border-primary/20 p-8">
                 <h3 className="text-xl font-['Orbitron'] font-bold mb-6">
-                  Participants
+                  Participants ({players?.length || 0})
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {players && players.length > 0 ? (
@@ -279,116 +288,117 @@ export default function Tirage() {
             <div className="max-w-4xl mx-auto space-y-8">
               <Card className="neon-border bg-gradient-to-br from-primary/20 to-secondary/20 p-12">
                 <div className="text-center">
-                  <div className="text-8xl mb-6 animate-float">🎉</div>
+                  <div className="text-8xl mb-6 animate-float">{wonPrize?.icon || "🎉"}</div>
 
                   <h2 className="text-3xl font-['Orbitron'] font-bold mb-4">
                     Félicitations au gagnant !
                   </h2>
+
+                  <Badge className={`mb-6 bg-gradient-to-r ${wonPrize?.color || 'from-primary to-secondary'} text-white px-4 py-2 text-lg`}>
+                    Jour {lastPrizeDay}
+                  </Badge>
 
                   <div className="bg-background/50 rounded-xl p-8 max-w-md mx-auto mb-8">
                     <div className="text-sm text-muted-foreground mb-2">Adresse gagnante</div>
                     <div className="text-2xl font-['Orbitron'] font-bold text-primary break-all">
                       {lastWinner}
                     </div>
+                    {isWinner && (
+                      <div className="mt-4">
+                        <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                          C'est vous ! 🎉
+                        </Badge>
+                        <Button
+                          onClick={() => setShowWinnerModal(true)}
+                          className="w-full mt-3 bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                          size="sm"
+                        >
+                          Remplir mes informations
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto mb-8">
-                    <div className="bg-muted/30 rounded-lg p-4">
-                      <div className="text-sm text-muted-foreground mb-1">Gain</div>
-                      <div className="text-2xl font-['Orbitron'] font-bold text-secondary">
-                        {lastPrize ? formatEther(lastPrize) : "0"} ETH
-                      </div>
-                    </div>
-                    <div className="bg-muted/30 rounded-lg p-4">
-                      <div className="text-sm text-muted-foreground mb-1">Participants</div>
-                      <div className="text-2xl font-['Orbitron'] font-bold">
-                        {players ? players.length : 0}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-6">
-                    <p className="text-sm font-medium mb-2">
-                      Le tirage vient d'être effectué automatiquement par le smart contract
-                    </p>
-                    <code className="text-xs font-mono text-secondary break-all">
-                      #0xA31B7E2F5C893D4E2A1C0B8D9E3F6A1B2C3D4E5F...
-                    </code>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      sur la blockchain Ethereum
+                  <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl p-8 max-w-2xl mx-auto">
+                    <h3 className="text-2xl font-['Orbitron'] font-bold mb-3">
+                      {wonPrize?.name}
+                    </h3>
+                    <p className="text-lg text-muted-foreground">
+                      {wonPrize?.description}
                     </p>
                   </div>
                 </div>
               </Card>
 
-              {/* Vérification */}
-              <Card className="bg-card/30 backdrop-blur-sm border-primary/20 p-8">
-                <h3 className="text-xl font-['Orbitron'] font-bold mb-6">
-                  Vérifier le résultat
+              {/* Historique des gagnants */}
+              {winners && winners.length > 0 && (
+                <Card className="bg-card/30 backdrop-blur-sm border-primary/20 p-8">
+                  <h3 className="text-xl font-['Orbitron'] font-bold mb-6">
+                    Historique des gagnants
+                  </h3>
+
+                  <div className="space-y-4">
+                    {winners.map((winner: any, index: number) => (
+                      <div key={index} className="bg-muted/30 rounded-lg p-4 flex items-center gap-4">
+                        <div className="text-4xl">{winner.prizeIcon}</div>
+                        <div className="flex-1">
+                          <div className="font-bold">Jour {winner.prizeDay}</div>
+                          <div className="text-sm text-muted-foreground">{winner.prizeName}</div>
+                        </div>
+                        <div className="text-sm font-mono text-primary">
+                          {winner.address.slice(0, 6)}...{winner.address.slice(-4)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
+              {/* Les 3 prix */}
+              <div className="space-y-6">
+                <h3 className="text-2xl font-['Orbitron'] font-bold text-center">
+                  Tous les prix de la semaine
                 </h3>
-
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
-                      <span className="text-primary">1</span>
-                    </div>
-                    <div>
-                      <h4 className="font-bold mb-1">Transaction de tirage</h4>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Le tirage a été effectué dans le bloc #18,523,891
-                      </p>
-                      <Button variant="outline" size="sm" className="border-primary/50 hover:bg-primary/10">
-                        Voir sur Etherscan
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
-                      <span className="text-primary">2</span>
-                    </div>
-                    <div>
-                      <h4 className="font-bold mb-1">Code du smart contract</h4>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Le code source est vérifié et open-source
-                      </p>
-                      <Button variant="outline" size="sm" className="border-primary/50 hover:bg-primary/10">
-                        Voir le code
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
-                      <span className="text-primary">3</span>
-                    </div>
-                    <div>
-                      <h4 className="font-bold mb-1">Liste des participants</h4>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Tous les tickets enregistrés sont visibles publiquement
-                      </p>
-                      <Button variant="outline" size="sm" className="border-primary/50 hover:bg-primary/10">
-                        Voir tous les tickets
-                      </Button>
-                    </div>
-                  </div>
+                <div className="grid md:grid-cols-3 gap-6">
+                  {allPrizes.map((prize, index) => {
+                    const dayIndex = index;
+                    const isToday = dayIndex === currentDay;
+                    const isWon = dayIndex < currentDay;
+                    const winner = winners.find((w: any) => w.prizeDay === prize.day);
+                    
+                    return (
+                      <DailyPrizeCard
+                        key={prize.day}
+                        day={prize.day}
+                        name={prize.name}
+                        description={prize.description}
+                        icon={prize.icon}
+                        color={prize.color}
+                        isWon={isWon}
+                        isToday={isToday}
+                        winnerAddress={winner?.address}
+                      />
+                    );
+                  })}
                 </div>
-              </Card>
+              </div>
 
               {/* Prochain tirage */}
-              <div className="text-center">
-                <Card className="bg-gradient-to-br from-primary/10 to-secondary/10 p-8 inline-block">
-                  <h3 className="text-xl font-['Orbitron'] font-bold mb-3">
-                    Prochain tirage
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    Le prochain tirage aura lieu dans 7 jours
-                  </p>
-                  <Button className="bg-primary hover:bg-primary/90">
-                    Participer au prochain tirage
-                  </Button>
-                </Card>
-              </div>
+              {currentDay < 2 && (
+                <div className="text-center">
+                  <Card className="bg-gradient-to-br from-primary/10 to-secondary/10 p-8 inline-block">
+                    <h3 className="text-xl font-['Orbitron'] font-bold mb-3">
+                      Prochain tirage
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      Jour {currentDay + 2} - Demain à la même heure
+                    </p>
+                    <Button className="bg-primary hover:bg-primary/90">
+                      Participer au prochain tirage
+                    </Button>
+                  </Card>
+                </div>
+              )}
             </div>
           )}
         </div>
